@@ -30,25 +30,27 @@ services:
 
   producer:
     build: docker/producer
-#    command: python src/main.py
     command: python main.py
     volumes:
       - ./docker/producer/src:/app/src
     restart: always
     depends_on:
       - kafka
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=y
 
   consumer:
     build: docker/consumer
-#    command: python src/main.py
     command: python main.py
     volumes:
       - ./docker/consumer/src:/app/src
     restart: always
     depends_on:
       - kafka
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=y
 

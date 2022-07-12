@@ -6,3 +6,4 @@ data/
 !.flake8
 !.env.example
 !.gitignore
+.env
