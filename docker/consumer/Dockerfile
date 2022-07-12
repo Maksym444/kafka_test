@@ -2,8 +2,8 @@ FROM python:3.8
 
 RUN apt update
 
-RUN mkdir /srv/project
-WORKDIR /srv/project
+RUN mkdir /app
+WORKDIR /app
 
 COPY ./src ./src
 COPY ./Pipfile ./Pipfile
@@ -14,4 +14,5 @@ RUN python -m pip install pipenv
 RUN pipenv lock
 RUN pipenv install --system --deploy --ignore-pipfile
 
+WORKDIR /app/src
 CMD ["bash"]

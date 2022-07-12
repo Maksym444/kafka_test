@@ -12,6 +12,12 @@ default: reboot
 start:
 	docker-compose up
 
+lenses:
+	docker compose -f docker-compose.lenses.yml down -t 1
+	docker compose -f docker-compose.lenses.yml up
+#	docker-compose -f docker-compose.lenses.yml up -d
+#	docker-compose logs -f --tail=100
+
 stop:
 	docker-compose down
 
@@ -34,7 +40,7 @@ rebootd:
 	docker-compose down && docker-compose up -d
 
 logs:
-	docker-compose logs -f
+	docker-compose logs -f -t
 
 top:
 	docker-compose top
