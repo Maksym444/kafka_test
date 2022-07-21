@@ -6,6 +6,7 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY ./src ./src
+COPY ./log ./log
 COPY ./Pipfile ./Pipfile
 #COPY ./Pipfile.lock ./Pipfile.lock
 

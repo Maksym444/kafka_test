@@ -1,3 +1,5 @@
+import itertools
+
 import os
 
 import asyncio
@@ -29,11 +31,12 @@ async def consumer(partition_id):
         max_partition_fetch_bytes=SIZE_MB*1,
         fetch_max_bytes=SIZE_MB*50
     )
-    consumer.assign([TopicPartition('topic', partition_id)])
-    producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
+    # consumer.assign([TopicPartition('topic', partition_id)])
+    consumer.assign([TopicPartition('topic', 0)])
+    # producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
 
     await consumer.start()
-    await producer.start()
+    # await producer.start()
 
     while True:
         try:
@@ -42,11 +45,12 @@ async def consumer(partition_id):
             for tp, messages in data.items():
                 for message in messages:
                     logger.info(f'PARTITION_ID {partition_id}: received message: %s', message)
-                    task = json.loads(message.value.decode())
+                    # logger.info(f'PARTITION_ID {partition_id}: received message: %s', message.value.decode())
+                    # task = json.loads(message.value.decode())
 
-                    async for msg in parser.get_messages(parser.client, task['url'], task['last_message_id']):
-                        await producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
-                        logger.info(f'PARTITION_ID {partition_id}: Replied with msg={msg}')
+                    # async for msg in parser.get_messages(parser.client, task['url'], task['last_message_id']):
+                    #     await producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
+                    #     logger.info(f'PARTITION_ID {partition_id}: Replied with msg={msg}')
 
             logger.info(f'PARTITION_ID {partition_id}: Sleeping till the next attempt...')
             # logger.info(' PARTITION_ID: Sleeping till the next attempt...')
@@ -61,7 +65,8 @@ async def consumer(partition_id):
 
 
 async def start_coros():
-    consumers = [consumer(i) for i in range(PARTITIONS_COUNT)]
+    # consumers = [consumer(i) for i in range(PARTITIONS_COUNT)]
+    consumers = [consumer(i) for i in itertools.repeat(0, 8)]
     await asyncio.gather(*consumers)
 
 

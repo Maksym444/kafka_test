@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from telethon import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.messages import GetFullChatRequest
@@ -9,6 +7,7 @@ from telethon.tl.functions.messages import GetFullChatRequest
 # path_to_files = config.path_to_files
 
 client = TelegramClient('memory1', 17888040, '328fe1981bde399fee2093ed48608abb')  # CHANGE TO YOURS Telegram API
+# client = TelegramClient('memory3', 19262648, '1ef058488ce97a3bae3da8cfade23451')  # CHANGE TO YOURS Telegram API
 
 
 async def get_full_channel_info_and_entity(client, channel):
@@ -92,7 +91,7 @@ async def get_messages(client, channel, last_message_id):
         # new_message['source_type'] = 'telegram'
         # new_message['tags'] = source['Tags']
         try:
-            profile_photo = await client.download_profile_photo(message.sender_id, f'{entity.id}/{message.sender_id}.jpg')
+            profile_photo = await client.download_profile_photo(message.sender_id, f'media/{entity.id}/{message.sender_id}.jpg')
             new_message['user_avatar'] = profile_photo
         except Exception:
             pass
@@ -116,4 +115,4 @@ async def get_messages(client, channel, last_message_id):
 
 if __name__ == '__main__':
     with client:
-        client.loop.run_until_complete(get_messages(client, 'https://t.me/mudak'))
+        client.loop.run_until_complete(get_messages(client, 'https://t.me/mudak', 0))

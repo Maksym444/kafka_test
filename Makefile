@@ -7,40 +7,39 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-default: reboot
+default: rebootd logs
 
 start:
-	docker compose up
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml up
 
 lenses:
-	docker compose -f docker-compose.lenses.yml down -t 1
-	docker compose -f docker-compose.lenses.yml up
+	docker compose -f docker-compose.yml -f docker-compose.lenses.yml down -t 1
+	docker compose -f docker-compose.yml -f docker-compose.lenses.yml up -d
+	docker compose -f docker-compose.yml -f docker-compose.lenses.yml logs -f -t
 #	docker-compose -f docker-compose.lenses.yml up -d
 #	docker-compose logs -f --tail=100
 
 stop:
-	docker compose down
+	docker compose -f docker-compose.yml -f docker-compose.main.yml down -t 4
 
 restart:
-	docker compose restart
+	docker compose -f docker-compose.yml -f docker-compose.main.yml restart
 
 rebuild:
-	docker compose build
+	docker compose -f docker-compose.yml -f docker-compose.main.yml build
 
 rebuildf:
-	docker compose build --no-cache
+	docker compose -f docker-compose.yml -f docker-compose.main.yml build --no-cache
 
-reboot:
-	docker compose down && docker compose up
+reboot: stop start
 
 startd:
-	docker compose up -d
+	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d
 
-rebootd:
-	docker compose down && docker compose up -d
+rebootd: stop startd
 
 logs:
-	docker compose logs -f -t
+	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t
 
 top:
 	docker compose top

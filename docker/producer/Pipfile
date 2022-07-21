@@ -10,7 +10,7 @@ python-dotenv = "*"
 django = "*"
 django-extensions = "*"
 aiokafka = "*"
-#django-celery-beat = "*"
+psycopg2 = "*"
 
 [requires]
 python_version = "3.8"

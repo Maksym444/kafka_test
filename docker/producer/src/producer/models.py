@@ -64,6 +64,8 @@ class Channel(BaseModel):
     channel_id = models.TextField(db_index=True)
     last_parsed = models.DateTimeField(null=True)
     last_message_id = models.IntegerField(default=0)
+    last_message_ts = models.DateTimeField(null=True)
+
 
     # date = models.DateTimeField(blank=True, null=True)
     # username = models.TextField(blank=True, null=True)

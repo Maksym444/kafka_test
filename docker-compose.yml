@@ -1,38 +1,44 @@
 version: '3'
 
 services:
-  kafka:
-    image: bitnami/kafka
-    restart: always
-    hostname: kafka
-    ports:
-         - '9092:9092'
-#    volumes:
-#      - kafka_data:/bitnami/kafka
-    environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_ADVERTISED_PORT=9092
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
-    depends_on:
-      - zookeeper
 
-  zookeeper:
-    image: bitnami/zookeeper
-    restart: always
-    hostname: zookeeper
-    ports:
-         - '2181:2181'
+  kafka-actualizer:
+    image: bitnami/kafka
+    depends_on:
+      - kafka
+    volumes:
+      - ./docker/wait-for-it.sh:/wait-for-it.sh
+    command: |
+      bash -c '/wait-for-it.sh --timeout=0 -s kafka:9092 && \
+      kafka-topics.sh --create --if-not-exists --topic topic --partitions ${KAFKA_PARTITIONS_NUM} --bootstrap-server kafka:9092 && \
+      kafka-topics.sh --create --if-not-exists --topic topic_result --partitions ${KAFKA_PARTITIONS_NUM} --bootstrap-server kafka:9092 && \
+      exit 0'
+    env_file:
+      - .env
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
+
+  postgres:
+    image: postgres:14
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - 5444:5432
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+      - POSTGRES_USER=postgres
 
   producer:
     build: docker/producer
-    command: python main.py
+#    command: python main.py
+    command: python test.py
     volumes:
+      - ./docker/wait-for-it.sh:/wait-for-it.sh
       - ./docker/producer/src:/app/src
+      - ./docker/producer/log:/app/log
     restart: always
     depends_on:
       - kafka
@@ -43,9 +49,11 @@ services:
 
   consumer:
     build: docker/consumer
-    command: python main.py
+#    command: python main.py
+    command: python test.py
     volumes:
       - ./docker/consumer/src:/app/src
+      - ./docker/consumer/log:/app/log
     restart: always
     depends_on:
       - kafka
@@ -54,6 +62,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=y
 
-#volumes:
+volumes:
 #  kafka_data: {}
+  pg_data: {}
 

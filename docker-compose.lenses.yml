@@ -6,32 +6,8 @@ services:
     ports:
          - '3030:3030'
          - '9092:9092'
+    env_file:
+      - .env
     environment:
-      - EULA=https://licenses.lenses.io/d/?id=df5fd7c3-01af-11ed-a0bc-42010af01003
+      - EULA=https://licenses.lenses.io/d/?id=${LENSESIO_KEY}
       - ADV_HOST=kafka
-
-  producer:
-    build: docker/producer
-    command: python main.py
-    volumes:
-      - ./docker/producer/src:/app/src
-    restart: always
-    depends_on:
-      - kafka
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=y
-
-  consumer:
-    build: docker/consumer
-    command: python main.py
-    volumes:
-      - ./docker/consumer/src:/app/src
-    restart: always
-    depends_on:
-      - kafka
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=y
