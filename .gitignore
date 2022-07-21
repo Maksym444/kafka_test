@@ -3,6 +3,9 @@ env/
 **/__pycache__/
 **/media/
 **/migrations/
+**/log/
+**/users/
+**/*.session*
 .*
 data/
 !.flake8

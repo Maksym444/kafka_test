@@ -23,13 +23,13 @@ KAFKA_PORT = os.getenv('KAFKA_PORT')
 
 async def consumer(partition_id):
     consumer = AIOKafkaConsumer(
-        # 'topic',
+        'topic',
         bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
         group_id='consumers-group',
         max_partition_fetch_bytes=SIZE_MB*1,
         fetch_max_bytes=SIZE_MB*50
     )
-    consumer.assign([TopicPartition('topic', partition_id)])
+    # consumer.assign([TopicPartition('topic', partition_id)])
     producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
 
     await consumer.start()

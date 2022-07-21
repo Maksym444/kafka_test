@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  producer:
+    command: python tests/test_partition.py
+
+  consumer:
+    command: python tests/test_partition.py

@@ -44,5 +44,12 @@ logs:
 top:
 	docker compose top
 
+
+# --------------------------------
+test:
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up #--scale consumer=2
+
+
 export:
 	export $(cat .env | sed 's/#.*//g' | xargs)

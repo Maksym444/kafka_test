@@ -2,12 +2,12 @@ from telethon import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.messages import GetFullChatRequest
 
+import os
 
 # video_download = config.video_download
 # path_to_files = config.path_to_files
 
-client = TelegramClient('memory1', 17888040, '328fe1981bde399fee2093ed48608abb')  # CHANGE TO YOURS Telegram API
-# client = TelegramClient('memory3', 19262648, '1ef058488ce97a3bae3da8cfade23451')  # CHANGE TO YOURS Telegram API
+client = TelegramClient('memory1', int(os.getenv('TELETHON_APP_ID')), os.getenv('TELETHON_APP_SECRET'))  # CHANGE TO YOURS Telegram API
 
 
 async def get_full_channel_info_and_entity(client, channel):
@@ -55,7 +55,7 @@ async def get_messages(client, channel, last_message_id):
                     d['reply_date'] = reply_message.date
                     d['post_author'] = message.post_author
                     profile_photo_reply = await client.download_profile_photo(entity=reply_message.sender_id,
-                                                                        file=f'users/{entity.id}/'
+                                                                        file=f'media/users/{entity.id}/'
                                                                              f'{reply_message.sender_id}.jpg')
                     d['user_avatar'] = profile_photo_reply
                     if reply_message.media is not None:

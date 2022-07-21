@@ -1,16 +1,21 @@
-import itertools
-
-import os
-
 import asyncio
-import json
-
+import itertools
+import logging
+import os
 import time
-from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from aiokafka import AIOKafkaConsumer
 from kafka import TopicPartition
 
 import parser
-from logger import logger
+
+# ----------------------------------------------------------------------------------------------------------------------
+log_file = "../log/consumer1.log"
+log_level = logging.INFO
+logging.basicConfig(
+    level=log_level, filename=log_file, filemode="a+", format="%(asctime)-15s %(levelname)-8s %(message)s"
+)
+logger = logging.getLogger("date_parser")
+logger.addHandler(logging.StreamHandler())
 
 
 STARTUP_DELAY = 10
@@ -25,14 +30,14 @@ KAFKA_PORT = os.getenv('KAFKA_PORT')
 
 async def consumer(partition_id):
     consumer = AIOKafkaConsumer(
-        # 'topic',
+        'topic',
         bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
         group_id='consumers-group',
         max_partition_fetch_bytes=SIZE_MB*1,
         fetch_max_bytes=SIZE_MB*50
     )
     # consumer.assign([TopicPartition('topic', partition_id)])
-    consumer.assign([TopicPartition('topic', 0)])
+    # consumer.assign([TopicPartition('topic', 0)])
     # producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
 
     await consumer.start()
@@ -45,6 +50,7 @@ async def consumer(partition_id):
             for tp, messages in data.items():
                 for message in messages:
                     logger.info(f'PARTITION_ID {partition_id}: received message: %s', message)
+                    # await asyncio.sleep(0)
                     # logger.info(f'PARTITION_ID {partition_id}: received message: %s', message.value.decode())
                     # task = json.loads(message.value.decode())
 
@@ -66,7 +72,8 @@ async def consumer(partition_id):
 
 async def start_coros():
     # consumers = [consumer(i) for i in range(PARTITIONS_COUNT)]
-    consumers = [consumer(i) for i in itertools.repeat(0, 8)]
+    consumers = [consumer(i) for i in range(1)]
+    # consumers = [consumer(i) for i in itertools.repeat(0, 8)]
     await asyncio.gather(*consumers)
 
 
@@ -75,10 +82,10 @@ def main():
     time.sleep(STARTUP_DELAY)
     logger.info('CONSUMER: start reading messages!')
 
-    with parser.client:
+    # with parser.client:
         # loop = asyncio.get_event_loop()
         # loop.run_until_complete(start_coros())
-        asyncio.run(start_coros())
+    asyncio.run(start_coros())
 
 
 if __name__ == '__main__':
