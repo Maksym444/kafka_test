@@ -9,6 +9,8 @@ kafka-python3 = "*"
 python-dotenv = "*"
 telethon = "*"
 aiokafka = "*"
+mongoengine = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.8"

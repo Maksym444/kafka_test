@@ -34,12 +34,13 @@ rebuildf:
 reboot: stop start
 
 startd:
+	#docker compose -f docker-compose.yml -f docker-compose.main.yml up -d --scale consumer=2
 	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d
 
 rebootd: stop startd
 
 logs:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t
+	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t --tail=1000
 
 top:
 	docker compose top

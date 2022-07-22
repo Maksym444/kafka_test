@@ -1,13 +1,6 @@
-from telethon import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.messages import GetFullChatRequest
 
-import os
-
-# video_download = config.video_download
-# path_to_files = config.path_to_files
-
-client = TelegramClient('memory1', int(os.getenv('TELETHON_APP_ID')), os.getenv('TELETHON_APP_SECRET'))  # CHANGE TO YOURS Telegram API
 
 
 async def get_full_channel_info_and_entity(client, channel):
@@ -28,7 +21,7 @@ async def get_full_channel_info_and_entity(client, channel):
         pass
 
 
-async def get_photo(entity):
+async def get_photo(client, entity):
     photo = await client.get_profile_photos(entity)
     if len(photo) < 1:
         return None
@@ -37,7 +30,9 @@ async def get_photo(entity):
         return photo
 
 
-async def get_messages(client, channel, last_message_id):
+async def get_messages(client, channel, channel_id, last_message_id):
+    # if not channel_id:
+    #     entity = await client.get_entity(channel)
     entity = await client.get_entity(channel)
     async for message in client.iter_messages(channel, reverse=True, offset_id=last_message_id, min_id=last_message_id):
 
@@ -113,6 +108,6 @@ async def get_messages(client, channel, last_message_id):
 
         yield new_message
 
-if __name__ == '__main__':
-    with client:
-        client.loop.run_until_complete(get_messages(client, 'https://t.me/mudak', 0))
+# if __name__ == '__main__':
+#     with client:
+#         client.loop.run_until_complete(get_messages(client, 'https://t.me/mudak', 0))

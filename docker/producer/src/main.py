@@ -25,34 +25,34 @@ django.setup()
 from producer import models
 
 
-async def producer():
-    producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
-    await producer.start()
-
-    try:
-        while True:
-            channels = await models.Channel.all()
-            for idx, channel in enumerate(channels):
-                payload = json.dumps({
-                    'url': channel.url,
-                    'last_message_id': channel.last_message_id
-                }).encode()
-                res = await producer.send_and_wait(
-                    topic="topic",
-                    # key=int(channel.channel_id),
-                    value=payload,
-                    partition=idx%PARTITIONS_COUNT
-                )
-                logger.info(f'Sent message with RESULT: {res}')
-
-
-            logger.info('[PRODUCER] Sleeping till the next attempt...')
-            await asyncio.sleep(PRODUCE_POLL_INTERVAL_SEC)
-
-    except Exception as ex:
-        logger.error(f'EXCEPTION: {ex}')
-    finally:
-        await producer.stop()
+# async def producer():
+#     producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
+#     await producer.start()
+#
+#     try:
+#         while True:
+#             channels = await models.Channel.all()
+#             for idx, channel in enumerate(channels):
+#                 payload = json.dumps({
+#                     'url': channel.url,
+#                     'last_message_id': channel.last_message_id
+#                 }).encode()
+#                 res = await producer.send_and_wait(
+#                     topic="topic",
+#                     # key=int(channel.channel_id),
+#                     value=payload,
+#                     partition=idx%PARTITIONS_COUNT
+#                 )
+#                 logger.info(f'Sent message with RESULT: {res}')
+#
+#
+#             logger.info('[PRODUCER] Sleeping till the next attempt...')
+#             await asyncio.sleep(PRODUCE_POLL_INTERVAL_SEC)
+#
+#     except Exception as ex:
+#         logger.error(f'EXCEPTION: {ex}')
+#     finally:
+#         await producer.stop()
 
 
 async def consumer(partition_id):
@@ -94,7 +94,8 @@ async def consumer(partition_id):
 
 async def start_coros():
     consumers = [consumer(i) for i in range(PARTITIONS_COUNT)]
-    await asyncio.gather(*consumers, producer())
+    # await asyncio.gather(*consumers, producer())
+    await asyncio.gather(*consumers)
 
 
 def main():
