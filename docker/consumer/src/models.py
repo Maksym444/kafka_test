@@ -1,7 +1,13 @@
+import os
 from mongoengine import *
 
+MONGO_HOST = os.getenv('MONGO_HOST')
+MONGO_PORT = os.getenv('MONGO_PORT')
+MONGO_DBNAME = os.getenv('MONGO_DBNAME')
+
 # connect('mongodb')
-connect(host="mongodb://mongodb:27017/fetcher")
+mongo_connection_uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/{MONGO_DBNAME}"
+connect(host=mongo_connection_uri)
 
 
 class TgChannel(Document):

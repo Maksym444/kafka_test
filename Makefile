@@ -34,8 +34,9 @@ rebuildf:
 reboot: stop start
 
 startd:
+	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d --scale consumer=${SCALE_FACTOR}
 	#docker compose -f docker-compose.yml -f docker-compose.main.yml up -d --scale consumer=2
-	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d
+	#docker compose -f docker-compose.yml -f docker-compose.main.yml up -d
 
 rebootd: stop startd
 
@@ -44,6 +45,9 @@ logs:
 
 top:
 	docker compose top
+
+ps:
+	docker compose ps
 
 
 # --------------------------------

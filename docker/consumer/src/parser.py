@@ -30,11 +30,16 @@ async def get_photo(client, entity):
         return photo
 
 
-async def get_messages(client, channel, channel_id, last_message_id):
+async def get_channel_info(client, channel):
+    entity = await client.get_entity(channel)
+    return entity
+
+
+async def get_messages(client, channel_url, channel_id, last_message_id):
     # if not channel_id:
     #     entity = await client.get_entity(channel)
-    entity = await client.get_entity(channel)
-    async for message in client.iter_messages(channel, reverse=True, offset_id=last_message_id, min_id=last_message_id):
+    # entity = await client.get_entity(channel)
+    async for message in client.iter_messages(channel_url, reverse=True, offset_id=last_message_id, min_id=last_message_id):
 
         # if message.id < 0:  # last parsed message id
         #     return f'No new messages for channel {channel}'
@@ -42,15 +47,15 @@ async def get_messages(client, channel, channel_id, last_message_id):
         try:
             if message.replies and message.replies.replies > 0:
                 replies = []
-                async for reply_message in client.iter_messages(entity=channel, reply_to=message.id):
+                async for reply_message in client.iter_messages(entity=channel_url, reply_to=message.id):
                     d = dict()
                     has_replies = True
                     d['user_id'] = reply_message.sender_id
                     d['message'] = reply_message.message
-                    d['reply_date'] = reply_message.date
+                    d['reply_date'] = str(reply_message.date)
                     d['post_author'] = message.post_author
                     profile_photo_reply = await client.download_profile_photo(entity=reply_message.sender_id,
-                                                                        file=f'media/users/{entity.id}/'
+                                                                        file=f'media/users/{channel_id}/'
                                                                              f'{reply_message.sender_id}.jpg')
                     d['user_avatar'] = profile_photo_reply
                     if reply_message.media is not None:
@@ -80,13 +85,14 @@ async def get_messages(client, channel, channel_id, last_message_id):
         new_message['message'] = message.message or ''
         # new_message['date'] = str(datetime.now()) #  add time
         new_message['date'] = str(message.date) #  add time
-        new_message['channel_url'] = channel
+        new_message['date_raw'] = (message.date) #  add time
+        new_message['channel_url'] = channel_url
         new_message['has_replies'] = has_replies
         new_message['replies'] = replies
         # new_message['source_type'] = 'telegram'
         # new_message['tags'] = source['Tags']
         try:
-            profile_photo = await client.download_profile_photo(message.sender_id, f'media/{entity.id}/{message.sender_id}.jpg')
+            profile_photo = await client.download_profile_photo(message.sender_id, f'media/{channel_id}/{message.sender_id}.jpg')
             new_message['user_avatar'] = profile_photo
         except Exception:
             pass

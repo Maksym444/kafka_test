@@ -80,6 +80,7 @@ services:
     volumes:
       - ./docker/consumer/src:/app/src
       - ./docker/consumer/log:/app/log
+      - ./docker/consumer/entrypoint.sh:/app/entrypoint.sh
     restart: always
     depends_on:
       - kafka
