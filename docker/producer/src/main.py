@@ -72,9 +72,10 @@ async def consumer(partition_id):
             for tp, messages in data.items():
                 for msg in messages:
                     payload = json.loads(msg.value.decode())
-                    channel = await models.Channel.update_by_filter(
+                    channel = await models.Channel.upsert_by_filter(
                         filters={'url': payload['channel_url']},
                         data={
+                            'url': payload['channel_url'],
                             'last_message_id': payload['id'],
                             'last_message_ts': payload['date'],
                         }

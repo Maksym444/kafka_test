@@ -20,7 +20,7 @@ lenses:
 #	docker-compose logs -f --tail=100
 
 stop:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml down -t 4
+	docker compose -f docker-compose.yml -f docker-compose.main.yml down
 
 restart:
 	docker compose -f docker-compose.yml -f docker-compose.main.yml restart

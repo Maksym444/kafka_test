@@ -21,11 +21,14 @@ class BaseModel(models.Model):
         rec.update(**data)
         return list(rec)
 
-    # @classmethod
-    # @sync_to_async
-    # def create_record(cls, data):
-    #     rec = cls.objects.create(**data)
-    #     return rec
+    @classmethod
+    @sync_to_async
+    def upsert_by_filter(cls, filters, data):
+        obj, created = cls.objects.get_or_create(
+            defaults=data,
+            **filters
+        )
+        return obj
 
 
 class Source(BaseModel):
@@ -58,10 +61,10 @@ class Source(BaseModel):
 
 class Channel(BaseModel):
     source = models.ForeignKey(Source, models.DO_NOTHING, blank=True, null=True)
-    enabled = models.BooleanField()
+    enabled = models.BooleanField(default=True)
     title = models.TextField(blank=True, null=True)
     url = models.TextField(db_index=True)
-    channel_id = models.TextField(db_index=True)
+    channel_id = models.TextField(db_index=True, null=True)
     last_parsed = models.DateTimeField(null=True)
     last_message_id = models.IntegerField(default=0)
     last_message_ts = models.DateTimeField(null=True)
