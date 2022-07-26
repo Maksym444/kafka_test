@@ -2,22 +2,6 @@ version: '3'
 
 services:
 
-  kafka-actualizer:
-    image: bitnami/kafka
-    depends_on:
-      - kafka
-    volumes:
-      - ./docker/wait-for-it.sh:/wait-for-it.sh
-    command: |
-      bash -c '/wait-for-it.sh --timeout=0 -s kafka:9092 && \
-      kafka-topics.sh --create --if-not-exists --topic topic --partitions ${KAFKA_PARTITIONS_NUM} --bootstrap-server kafka:9092 && \
-      kafka-topics.sh --create --if-not-exists --topic topic_result --partitions ${KAFKA_PARTITIONS_NUM} --bootstrap-server kafka:9092 && \
-      exit 0'
-    env_file:
-      - .env
-    environment:
-      KAFKA_BROKER_ID: ignored
-      KAFKA_ZOOKEEPER_CONNECT: ignored
 
   postgres:
     image: postgres:14
@@ -30,6 +14,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data
 #      - POSTGRES_USER=postgres
+
 
   mongodb:
     image: mongo
@@ -56,23 +41,6 @@ services:
     depends_on:
       - mongodb
 
-
-  producer:
-    build: docker/producer
-    command: python main.py
-#    command: python test.py
-    volumes:
-      - ./docker/wait-for-it.sh:/wait-for-it.sh
-      - ./docker/producer/src:/app/src
-      - ./docker/producer/log:/app/log
-    restart: always
-    depends_on:
-      - kafka
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=y
-
   consumer:
     build: docker/consumer
 #    command: sleep 600
@@ -82,12 +50,28 @@ services:
       - ./docker/consumer/log:/app/log
       - ./docker/consumer/entrypoint.sh:/app/entrypoint.sh
     restart: always
-    depends_on:
-      - kafka
     env_file:
       - .env
     environment:
       - PYTHONUNBUFFERED=y
+    depends_on:
+      - kafka
+      - mongodb
+
+  producer:
+    build: docker/producer
+    command: python main.py
+    volumes:
+      - ./docker/producer/src:/app/src
+      - ./docker/producer/log:/app/log
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=y
+    depends_on:
+      - kafka
+
 
 volumes:
 #  kafka_data: {}

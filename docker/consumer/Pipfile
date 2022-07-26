@@ -10,10 +10,15 @@ python-dotenv = "*"
 telethon = "*"
 aiokafka = "*"
 mongoengine = "*"
-ipython = "*"
+motorengine = "*"
 telemongo = "*"
 
 [requires]
 python_version = "3.9"
 
 [dev-packages]
+ipython = "*"
+pytest = "*"
+pytest_mongo = "*"
+pytest-mock-resources = "*"
+#pytest-mock-resources = "*"

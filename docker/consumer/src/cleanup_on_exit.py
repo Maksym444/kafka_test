@@ -10,5 +10,12 @@ def reset_channels():
         rec.locked = False
         rec.save()
 
+    TgAccount(
+        locked=False,
+        db_name='CLENAUP',
+        app_id='app_id',
+        app_secret='42'
+    ).save()
+
 if __name__ == '__main__':
     reset_channels()

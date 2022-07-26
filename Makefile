@@ -15,9 +15,7 @@ start:
 lenses:
 	docker compose -f docker-compose.yml -f docker-compose.lenses.yml down -t 1
 	docker compose -f docker-compose.yml -f docker-compose.lenses.yml up -d
-	docker compose -f docker-compose.yml -f docker-compose.lenses.yml logs -f -t
-#	docker-compose -f docker-compose.lenses.yml up -d
-#	docker-compose logs -f --tail=100
+	docker compose -f docker-compose.yml -f docker-compose.lenses.yml logs -f -t --tail=100
 
 stop:
 	docker compose -f docker-compose.yml -f docker-compose.main.yml down
@@ -31,12 +29,18 @@ rebuild:
 rebuildf:
 	docker compose -f docker-compose.yml -f docker-compose.main.yml build --no-cache
 
+rebuild-dev:
+	docker compose -f docker-compose.yml -f docker-compose.main.yml  -f docker-compose.test.yml  build
+
+rebuild-devf:
+	docker compose -f docker-compose.yml -f docker-compose.main.yml  -f docker-compose.test.yml  build --no-cache
+
 reboot: stop start
 
 startd:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d --scale consumer=${SCALE_FACTOR}
-	#docker compose -f docker-compose.yml -f docker-compose.main.yml up -d --scale consumer=2
-	#docker compose -f docker-compose.yml -f docker-compose.main.yml up -d
+	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d \
+		--scale consumer=${CONSUMER_SCALE_FACTOR} \
+		--scale producer=${PRODUCER_SCALE_FACTOR}
 
 rebootd: stop startd
 
@@ -50,11 +54,18 @@ ps:
 	docker compose ps
 
 
-# --------------------------------
-test:
+# ----------------------------------------------------------------------------------------------------------------------
+tests:
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
-	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up #--scale consumer=2
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up \
+		--scale consumer=${CONSUMER_SCALE_FACTOR}
+
+testsd:
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up -d \
+		--scale consumer=${CONSUMER_SCALE_FACTOR}
 
 
+# ----------------------------------------------------------------------------------------------------------------------
 export:
 	export $(cat .env | sed 's/#.*//g' | xargs)

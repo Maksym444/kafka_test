@@ -3,6 +3,7 @@ import random
 import asyncio
 import json
 import os
+import re
 import time
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from pymongo import ReturnDocument
@@ -23,9 +24,16 @@ SIZE_KB = 1024
 SIZE_MB = SIZE_KB*SIZE_KB
 KAFKA_HOST = os.getenv('KAFKA_HOST')
 KAFKA_PORT = os.getenv('KAFKA_PORT')
-SCALE_FACTOR = int(os.getenv('SCALE_FACTOR'))
+CONSUMER_SCALE_FACTOR = int(os.getenv('CONSUMER_SCALE_FACTOR'))
 tg_account = None
-TG_ERROR_MISSING_CHANNEL = 'Cannot find any entity corresponding to'
+# TG_ERROR_MISSING_CHANNEL = 'Cannot find any entity corresponding to'
+TG_CHANNEL_ERRORS = [
+    'Nobody is using this username, or the username is unacceptable. If the latter, it must match.*',
+    'Cannot find any entity corresponding to.*',
+    'No user has ".*" as username',
+    'The channel specified is private and you lack permission to access it.*'
+]
+
 
 #
 # async def consumer(partition_id):
@@ -77,6 +85,7 @@ async def producer(partition_id, client):
         channel_dict = TgChannel._get_collection().find_one_and_update(
             filter={'locked': False, 'enabled': True},
             update={'$set': {'locked': True}},
+            sort=[('last_parsed', 1)],
             return_document=ReturnDocument.AFTER
         )
 
@@ -96,7 +105,7 @@ async def producer(partition_id, client):
             async for msg in parser.get_messages(client, channel.url, channel.channel_id, channel.last_message_id):
                 # await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
                 date_raw = msg.pop('date_raw')
-                await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode())
+                await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
                 logger.info(f'PARTITION_ID {partition_id}: Replied with msg={msg}')
                 channel.last_message_id = msg['id']
                 channel.last_message_ts = date_raw
@@ -108,10 +117,11 @@ async def producer(partition_id, client):
             logger.error('EXCEPTION (FloodWaitError): %s', ex)
 
         except Exception as ex:
-            if TG_ERROR_MISSING_CHANNEL in str(ex):
-                if channel:
-                    channel.enabled = False
-                    channel.save()
+            if channel:
+                for error in TG_CHANNEL_ERRORS:
+                    if re.match(error, str(ex)):
+                        channel.enabled = False
+                        channel.save()
 
             logger.error('EXCEPTION: %s', ex)
 
@@ -125,7 +135,7 @@ async def producer(partition_id, client):
 
 async def start_coros(client):
     # consumers = [consumer(i) for i in range(PARTITIONS_COUNT//2)]
-    producers = [producer(i, client) for i in range(PARTITIONS_COUNT//SCALE_FACTOR)]
+    producers = [producer(i, client) for i in range(PARTITIONS_COUNT//CONSUMER_SCALE_FACTOR)]
     await asyncio.gather(*producers, loop=client.loop)
 
 

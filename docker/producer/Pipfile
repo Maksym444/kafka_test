@@ -11,9 +11,9 @@ django = "*"
 django-extensions = "*"
 aiokafka = "*"
 psycopg2 = "*"
-ipython = "*"
 
 [requires]
 python_version = "3.9"
 
 [dev-packages]
+ipython = "*"
