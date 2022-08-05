@@ -24,10 +24,10 @@ restart:
 	docker compose -f docker-compose.yml -f docker-compose.main.yml restart
 
 rebuild:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml build
+	docker compose -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml build
 
 rebuildf:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml build --no-cache
+	docker compose -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml build --no-cache
 
 rebuild-dev:
 	docker compose -f docker-compose.yml -f docker-compose.main.yml  -f docker-compose.test.yml  build
@@ -40,7 +40,7 @@ reboot: stop start
 startd:
 	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d \
 		--scale consumer=${CONSUMER_SCALE_FACTOR} \
-		--scale producer=${PRODUCER_SCALE_FACTOR}
+		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
 rebootd: stop startd
 

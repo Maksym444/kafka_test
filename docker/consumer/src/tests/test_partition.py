@@ -12,7 +12,7 @@ from aiokafka import AIOKafkaConsumer
 # )
 # logger = logging.getLogger("date_parser")
 # logger.addHandler(logging.StreamHandler())
-
+from kafka import TopicPartition
 
 STARTUP_DELAY = 10
 CONSUME_POLL_INTERVAL_SEC = 5
@@ -33,6 +33,8 @@ async def consumer(partition_id):
         fetch_max_bytes=SIZE_MB*50
     )
 
+    # consumer.assign([TopicPartition('topic', partition_id)])
+    # consumer.assign([TopicPartition('topic', 0)])
     await consumer.start()
 
     while True:
@@ -60,8 +62,8 @@ async def consumer(partition_id):
 
 
 async def start_coros():
-    # consumers = [consumer(i) for i in range(PARTITIONS_COUNT)]
-    consumers = [consumer(i) for i in range(1)]
+    consumers = [consumer(i) for i in range(PARTITIONS_COUNT)]
+    # consumers = [consumer(i) for i in range(1)]
     # consumers = [consumer(i) for i in itertools.repeat(0, 8)]
     await asyncio.gather(*consumers)
 

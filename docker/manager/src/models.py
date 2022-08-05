@@ -6,24 +6,9 @@ MONGO_PORT = os.getenv('MONGO_PORT')
 MONGO_DBNAME = os.getenv('MONGO_DBNAME')
 
 # connect('mongodb')
-mongo_connection_base_uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
 mongo_connection_uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/{MONGO_DBNAME}"
 connect(host=mongo_connection_uri)
 
-
-class TgAccountInfo(Document):
-    db_name = StringField(required=True, unique=True)
-    # locked = BooleanField(default=False)
-    app_id = IntField(required=True)
-    app_secret = StringField(required=True)
-    last_access_ts = DateTimeField(null=True)
-
-
-class TgAccount(Document):
-    db_name = StringField(required=True, unique=True)
-    locked = BooleanField(default=False)
-    app_id = IntField(required=True)
-    app_secret = StringField(required=True)
 
 class TgChannel(Document):
     url = StringField(required=True)
@@ -35,3 +20,10 @@ class TgChannel(Document):
     last_message_id = IntField(default=0)
     last_message_ts = DateTimeField(null=True)
     app_id = IntField(required=False)
+
+
+# class TgAccount(Document):
+#     db_name = StringField(required=True, unique=True)
+#     locked = BooleanField(default=False)
+#     app_id = IntField(required=True)
+#     app_secret = StringField(required=True)

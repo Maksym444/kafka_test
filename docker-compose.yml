@@ -41,14 +41,14 @@ services:
     depends_on:
       - mongodb
 
-  consumer:
-    build: docker/consumer
+  manager:
+    build: docker/manager
 #    command: sleep 600
     command: python main.py
     volumes:
-      - ./docker/consumer/src:/app/src
-      - ./docker/consumer/log:/app/log
-      - ./docker/consumer/entrypoint.sh:/app/entrypoint.sh
+      - ./docker/manager/src:/app/src
+#      - ./docker/consumer/log:/app/log
+#      - ./docker/consumer/entrypoint.sh:/app/entrypoint.sh
     restart: always
     env_file:
       - .env
@@ -58,12 +58,33 @@ services:
       - kafka
       - mongodb
 
-  producer:
-    build: docker/producer
+
+  consumer:
+    build: docker/consumer
+#    command: sleep 600
+#    command: python main.py
+    command: >
+      sh -c "/wait-for-it.sh --timeout=10 -s manager:8080 &&
+             python main.py"
+    volumes:
+      - ./docker/consumer/src:/app/src
+      - ./docker/consumer/log:/app/log
+#      - ./docker/consumer/entrypoint.sh:/app/entrypoint.sh
+      - ./docker/wait-for-it.sh:/wait-for-it.sh
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=y
+    depends_on:
+      - manager
+
+  processor:
+    build: docker/processor
     command: python main.py
     volumes:
-      - ./docker/producer/src:/app/src
-      - ./docker/producer/log:/app/log
+      - ./docker/processor/src:/app/src
+      - ./docker/processor/log:/app/log
     restart: always
     env_file:
       - .env

@@ -5,6 +5,7 @@ import time
 
 import django
 from aiokafka import AIOKafkaConsumer
+from kafka import TopicPartition
 
 from logger import logger
 
@@ -16,7 +17,7 @@ SIZE_KB = 1024
 SIZE_MB = SIZE_KB*SIZE_KB
 KAFKA_HOST = os.getenv('KAFKA_HOST')
 KAFKA_PORT = os.getenv('KAFKA_PORT')
-PRODUCER_SCALE_FACTOR = int(os.getenv('PRODUCER_SCALE_FACTOR'))
+PROCESSOR_SCALE_FACTOR = int(os.getenv('PROCESSOR_SCALE_FACTOR'))
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
@@ -62,15 +63,15 @@ async def consume(partition_id):
 
 
 async def start_coros():
-    consumers = [consume(i) for i in range(PARTITIONS_COUNT//PRODUCER_SCALE_FACTOR)]
+    consumers = [consume(i) for i in range(PARTITIONS_COUNT//PROCESSOR_SCALE_FACTOR)]
     # await asyncio.gather(*consumers, producer())
     await asyncio.gather(*consumers)
 
 
 def main():
-    logger.info(f'PRODUCER: wait until broker is up and running {STARTUP_DELAY}...')
+    logger.info(f'PROCESSOR: wait until broker is up and running {STARTUP_DELAY}...')
     time.sleep(STARTUP_DELAY)
-    logger.info('PRODUCER: start processing messages!')
+    logger.info('PROCESSOR: start processing messages!')
     asyncio.run(start_coros())
 
 

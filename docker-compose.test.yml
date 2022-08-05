@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  producer:
+  processor:
     command: python tests/test_partition.py
 
   consumer:

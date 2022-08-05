@@ -11,7 +11,7 @@ from telethon.errors import FloodWaitError
 
 import parser
 from logger import logger
-from models import TgAccount, TgChannel, mongo_connection_uri
+from models import TgAccount, TgChannel, mongo_connection_uri, mongo_connection_base_uri, TgAccountInfo
 
 from telethon import TelegramClient
 from telemongo import MongoSession
@@ -35,44 +35,6 @@ TG_CHANNEL_ERRORS = [
 ]
 
 
-#
-# async def consumer(partition_id):
-#     consumer = AIOKafkaConsumer(
-#         'topic',
-#         bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
-#         group_id='consumers-group',
-#         max_partition_fetch_bytes=SIZE_MB*1,
-#         fetch_max_bytes=SIZE_MB*50
-#     )
-#     # consumer.assign([TopicPartition('topic', partition_id)])
-#     producer = AIOKafkaProducer(bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}')
-#
-#     await consumer.start()
-#     await producer.start()
-#
-#     while True:
-#         try:
-#             # async for task in consumer:
-#             data = await consumer.getmany(timeout_ms=READ_TIMEOUT_SEC*1000)
-#             for tp, messages in data.items():
-#                 for message in messages:
-#                     logger.info(f'PARTITION_ID {partition_id}: received message: %s', message)
-#                     task = json.loads(message.value.decode())
-#
-#                     async for msg in parser.get_messages(parser.client, task['url'], task['last_message_id']):
-#                         await producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
-#                         logger.info(f'PARTITION_ID {partition_id}: Replied with msg={msg}')
-#
-#             logger.info(f'PARTITION_ID {partition_id}: Sleeping till the next attempt...')
-#             # logger.info(' PARTITION_ID: Sleeping till the next attempt...')
-#             await asyncio.sleep(CONSUME_POLL_INTERVAL_SEC)
-#
-#         except Exception as ex:
-#             logger.error('EXCEPTION: %s', ex)
-#
-#     # await consumer.stop()
-#     # await producer.stop()
-
 
 async def producer(partition_id, client):
     kafka_producer = AIOKafkaProducer(
@@ -83,7 +45,7 @@ async def producer(partition_id, client):
 
     while True:
         channel_dict = TgChannel._get_collection().find_one_and_update(
-            filter={'locked': False, 'enabled': True},
+            filter={'locked': False, 'enabled': True, 'app_id': client.api_id},
             update={'$set': {'locked': True}},
             sort=[('last_parsed', 1)],
             return_document=ReturnDocument.AFTER
@@ -123,7 +85,9 @@ async def producer(partition_id, client):
                         channel.enabled = False
                         channel.save()
 
-            logger.error('EXCEPTION: %s', ex)
+            logger.error('EXCEPTION: ex=%s, url=%s, last_id=%s, partition=%s',
+                         ex, channel.url, channel.last_message_id, partition_id)
+            # raise ex
 
         finally:
             logger.info(f'PARTITION_ID {partition_id}: Sleeping till the next attempt...')
@@ -143,24 +107,26 @@ def main():
     logger.info(f'CONSUMER: wait until broker is up and running {STARTUP_DELAY}...')
     time.sleep(random.randint(STARTUP_DELAY, STARTUP_DELAY))
 
-    tg_account = TgAccount._get_collection().find_one_and_update(
-        filter={'locked': False},
-        update={'$set': {'locked': True}},
-        return_document = ReturnDocument.AFTER
-    )
+    tg_account = TgAccountInfo.objects.order_by('last_access_ts').first()
 
     if tg_account is None:
         raise RuntimeError('Coudln\'t find available TG account!')
 
-    # tg_account = TgAccount.objects(db_name='memory2_1').first()
-    #
-    # session = MongoSession('fetcher', host=mongo_connection_uri)
+    tg_account.last_access_ts = datetime.datetime.now()
+    tg_account.save()
+
+    session = MongoSession(
+        database=f'account_{tg_account.app_id}',
+        host=f'{mongo_connection_base_uri}/account_{tg_account.app_id}'
+    )
 
     client = TelegramClient(
-        session=tg_account['db_name'],
-        # session=session,
-        api_id=tg_account['app_id'],
-        api_hash=tg_account['app_secret']
+        # session=tg_account['db_name'],
+        session=session,
+        # api_id=42,
+        # api_hash='NA'
+        api_id=tg_account.app_id,
+        api_hash=tg_account.app_secret
     )
 
     with client:
