@@ -27,7 +27,7 @@ from producer import models
 async def consume(partition_id):
     consumer = AIOKafkaConsumer(
         'topic_result',
-        group_id='consumers-group',
+        group_id='processors-group',
         bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
         max_partition_fetch_bytes=SIZE_MB * 1,
         fetch_max_bytes=SIZE_MB * 50
@@ -63,7 +63,9 @@ async def consume(partition_id):
 
 
 async def start_coros():
+    assert PARTITIONS_COUNT >= PROCESSOR_SCALE_FACTOR, "Number of kafka partitions should be >= than number processor instances"
     consumers = [consume(i) for i in range(PARTITIONS_COUNT//PROCESSOR_SCALE_FACTOR)]
+    # consumers = [consume(i) for i in range(PARTITIONS_COUNT)]
     # await asyncio.gather(*consumers, producer())
     await asyncio.gather(*consumers)
 

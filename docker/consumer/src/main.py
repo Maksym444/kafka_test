@@ -1,32 +1,33 @@
-import datetime
-import random
 import asyncio
 import json
 import os
+import random
 import re
+
+import datetime
 import time
-from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from aiokafka import AIOKafkaProducer
 from pymongo import ReturnDocument
+from telemongo import MongoSession
+from telethon import TelegramClient
 from telethon.errors import FloodWaitError
 
 import parser
 from logger import logger
-from models import TgAccount, TgChannel, mongo_connection_uri, mongo_connection_base_uri, TgAccountInfo
-
-from telethon import TelegramClient
-from telemongo import MongoSession
+from models import TgChannel, mongo_connection_base_uri, TgAccountInfo
 
 STARTUP_DELAY = 20
 CONSUME_POLL_INTERVAL_SEC = 5
 READ_TIMEOUT_SEC = 1
 PARTITIONS_COUNT = int(os.getenv('KAFKA_PARTITIONS_NUM', 8))
 SIZE_KB = 1024
+# TELETHON_FETCH_MSG_COUNT = None
+TELETHON_FETCH_MSG_COUNT = 256
 SIZE_MB = SIZE_KB*SIZE_KB
 KAFKA_HOST = os.getenv('KAFKA_HOST')
 KAFKA_PORT = os.getenv('KAFKA_PORT')
 CONSUMER_SCALE_FACTOR = int(os.getenv('CONSUMER_SCALE_FACTOR'))
 tg_account = None
-# TG_ERROR_MISSING_CHANNEL = 'Cannot find any entity corresponding to'
 TG_CHANNEL_ERRORS = [
     'Nobody is using this username, or the username is unacceptable. If the latter, it must match.*',
     'Cannot find any entity corresponding to.*',
@@ -38,14 +39,16 @@ TG_CHANNEL_ERRORS = [
 
 async def producer(partition_id, client):
     kafka_producer = AIOKafkaProducer(
-        bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}'
+        bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
+        max_request_size=5*SIZE_MB
     )
 
     await kafka_producer.start()
 
     while True:
+        # atomic read+update (CAS-like operation)
         channel_dict = TgChannel._get_collection().find_one_and_update(
-            filter={'locked': False, 'enabled': True, 'app_id': client.api_id},
+            filter={'locked': False, 'enabled': True, '$or': [{'app_id': client.api_id}, {'app_id': None}]},
             update={'$set': {'locked': True}},
             sort=[('last_parsed', 1)],
             return_document=ReturnDocument.AFTER
@@ -64,7 +67,8 @@ async def producer(partition_id, client):
                     channel.url, channel.last_message_ts, channel.last_parsed)
 
         try:
-            async for msg in parser.get_messages(client, channel.url, channel.channel_id, channel.last_message_id):
+            async for msg in parser.get_messages(client, channel.url, channel.channel_id, channel.last_message_id,
+                                                 limit=TELETHON_FETCH_MSG_COUNT):
                 # await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
                 date_raw = msg.pop('date_raw')
                 await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
@@ -98,9 +102,19 @@ async def producer(partition_id, client):
 
 
 async def start_coros(client):
-    # consumers = [consumer(i) for i in range(PARTITIONS_COUNT//2)]
-    producers = [producer(i, client) for i in range(PARTITIONS_COUNT//CONSUMER_SCALE_FACTOR)]
+    producers = [producer(i, client) for i in range(PARTITIONS_COUNT)]
     await asyncio.gather(*producers, loop=client.loop)
+
+
+async def test_auth(phone, client):
+    if not client.is_connected():
+        await client.connect()
+    me = await client.get_me()
+    if me is None:
+        await client.send_code_request(phone, force_sms=False)
+        value = input('CODE:')
+        me = await client.sign_in(phone, code=value)
+    print(me)
 
 
 def main():
@@ -121,13 +135,12 @@ def main():
     )
 
     client = TelegramClient(
-        # session=tg_account['db_name'],
         session=session,
-        # api_id=42,
-        # api_hash='NA'
         api_id=tg_account.app_id,
         api_hash=tg_account.app_secret
     )
+
+    # client.loop.run_until_complete(test_auth('+38...', client))
 
     with client:
         logger.info('CONSUMER: start reading messages!')

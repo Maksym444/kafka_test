@@ -1,6 +1,8 @@
+from telethon.errors import ChannelInvalidError
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.messages import GetFullChatRequest
-
+from pathlib import Path
+import traceback
 
 
 async def get_full_channel_info_and_entity(client, channel):
@@ -35,15 +37,14 @@ async def get_channel_info(client, channel):
     return entity
 
 
-async def get_messages(client, channel_url, channel_id, last_message_id):
-    # if not channel_id:
-    #     entity = await client.get_entity(channel)
-    # entity = await client.get_entity(channel)
-    async for message in client.iter_messages(channel_url, reverse=True, offset_id=last_message_id, min_id=last_message_id):
-
-        # if message.id < 0:  # last parsed message id
-        #     return f'No new messages for channel {channel}'
-
+async def get_messages(client, channel_url, channel_id, last_message_id, limit):
+    async for message in client.iter_messages(
+        entity=channel_url,
+        reverse=True,
+        offset_id=last_message_id,
+        min_id=last_message_id,
+        limit=limit
+    ):
         try:
             if message.replies and message.replies.replies > 0:
                 replies = []
@@ -54,10 +55,17 @@ async def get_messages(client, channel_url, channel_id, last_message_id):
                     d['message'] = reply_message.message
                     d['reply_date'] = str(reply_message.date)
                     d['post_author'] = message.post_author
-                    profile_photo_reply = await client.download_profile_photo(entity=reply_message.sender_id,
-                                                                        file=f'media/users/{channel_id}/'
-                                                                             f'{reply_message.sender_id}.jpg')
-                    d['user_avatar'] = profile_photo_reply
+                    if reply_message.sender_id is not None:
+                        filename = f'media/users/{channel_id}/{reply_message.sender_id}.jpg'
+                        profile_photo_file = Path(filename)
+                        if not profile_photo_file.exists():
+                            profile_photo_reply = await client.download_profile_photo(
+                                entity=reply_message.sender_id,
+                                file=filename
+                            )
+                        else:
+                            profile_photo_reply = filename
+                        d['user_avatar'] = profile_photo_reply
                     if reply_message.media is not None:
                         d['has_media'] = True
                         # d['media_list'] = await parse_media(reply_message, path_to_files, channel_id,
@@ -73,6 +81,10 @@ async def get_messages(client, channel_url, channel_id, last_message_id):
             # print(e)
             has_replies = False
             replies = []
+        except ChannelInvalidError as e:
+            print(f'EXCEPTION: {e}')
+            print(traceback.format_exc())
+            # raise
 
         # EACH MESSAGE
         new_message = dict()

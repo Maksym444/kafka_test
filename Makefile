@@ -45,7 +45,7 @@ startd:
 rebootd: stop startd
 
 logs:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t --tail=1000
+	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t --tail=100
 
 top:
 	docker compose top
