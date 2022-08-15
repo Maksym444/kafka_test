@@ -11,3 +11,10 @@ services:
     command: python tests/test_partition.py
     restart: on-failure
 #    command: pytest -s
+
+  manager:
+    build:
+        args:
+            - PIPENV_INSTALL_ARG=--dev
+#    command: python tests/test_telethon.py
+    restart: on-failure

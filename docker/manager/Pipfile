@@ -4,13 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-#kafka-python = "*"
-#kafka-python3 = "*"
 python-dotenv = "*"
-#telethon = "*"
-#aiokafka = "*"
 mongoengine = "*"
-#motorengine = "*"
 telemongo = "*"
 flask = "*"
 webargs = "*"
@@ -21,6 +16,4 @@ python_version = "3.9"
 [dev-packages]
 ipython = "*"
 pytest = "*"
-#pytest_mongo = "*"
-#pytest-mock-resources = "*"
-#pytest-mock-resources = "*"
+requests = "*"

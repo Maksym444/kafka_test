@@ -106,22 +106,11 @@ async def start_coros(client):
     await asyncio.gather(*producers, loop=client.loop)
 
 
-async def test_auth(phone, client):
-    if not client.is_connected():
-        await client.connect()
-    me = await client.get_me()
-    if me is None:
-        await client.send_code_request(phone, force_sms=False)
-        value = input('CODE:')
-        me = await client.sign_in(phone, code=value)
-    print(me)
-
-
 def main():
     logger.info(f'CONSUMER: wait until broker is up and running {STARTUP_DELAY}...')
     time.sleep(random.randint(STARTUP_DELAY, STARTUP_DELAY))
 
-    tg_account = TgAccountInfo.objects.order_by('last_access_ts').first()
+    tg_account = TgAccountInfo.objects(db_name='dbradul').order_by('last_access_ts').first()
 
     if tg_account is None:
         raise RuntimeError('Coudln\'t find available TG account!')
@@ -139,8 +128,6 @@ def main():
         api_id=tg_account.app_id,
         api_hash=tg_account.app_secret
     )
-
-    # client.loop.run_until_complete(test_auth('+38...', client))
 
     with client:
         logger.info('CONSUMER: start reading messages!')

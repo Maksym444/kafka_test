@@ -1,36 +1,31 @@
-from flask import Flask
+from flask import Flask, jsonify
 from marshmallow import validate
-from telemongo import MongoSession
-from telethon import TelegramClient
+
 from webargs import fields
 from webargs.flaskparser import use_kwargs
 
-from models import TgChannel, TgAccountInfo, mongo_connection_base_uri
+from telethon_funcs import phone_validator, loop, request_auth, confirm_auth, reset_channels
 
-g_client = None
 app = Flask(__name__)
 
-def reset_channels():
-    for rec in TgChannel.objects(locked=True, enabled=True):
-        rec.locked = False
-        rec.save()
 
-def phone_validator(value):
-    #TODO: validate phonenumber
-    return value
+@app.errorhandler(422)
+@app.errorhandler(400)
+def handle_error(err):
+    headers = err.data.get("headers", None)
+    messages = err.data.get("messages", ["Invalid request."])
+    result = [
+        jsonify({
+            "Description": err.description,
+            "Code": err.code,
+            "Errors": messages
+        }),
+        err.code
+    ]
+    if headers:
+        return result.append(headers)
 
-
-async def request_auth(client, phone):
-    if not client.is_connected():
-        await client.connect()
-    me = await client.get_me()
-    if me is None:
-        await client.send_code_request(phone, force_sms=False)
-    return me
-
-async def confirm_auth(client, phone, auth_code):
-    me = await client.sign_in(phone, code=auth_code)
-    return me
+    return tuple(result)
 
 
 @app.route('/')
@@ -41,42 +36,26 @@ def root():
 @app.route('/accounts/register', methods=['GET'])
 @use_kwargs(
     {
+        "app_id": fields.Integer(
+            required=True
+        ),
         "phone": fields.Str(
             required=True,
             validate=[phone_validator]
-            # validate=[validate.Length(min=2, max=6)],
-        ),
-        "app_id": fields.Integer(
-            required=True
         )
     },
     location="query",
 )
-def accounts_register(phone, app_id):
-    global g_client
-
-    tg_account = TgAccountInfo.objects(app_id=app_id).first()
-
-    session = MongoSession(
-        database=f'account_{tg_account.app_id}',
-        host=f'{mongo_connection_base_uri}/account_{tg_account.app_id}'
-    )
-
-    g_client = TelegramClient(
-        session=session,
-        api_id=tg_account.app_id,
-        api_hash=tg_account.app_secret
-    )
-
-    result = g_client.loop.run_until_complete(request_auth(g_client, phone))
+def accounts_register(app_id, phone):
+    result = loop.run_until_complete(request_auth(app_id, phone))
 
     if result is None:
         return "Auth code is requested"
     else:
-        return "Already authorized"
+        return "Already authorized!"
 
 
-@app.route('/accounts/register_auth_code', methods=['POST'])
+@app.route('/accounts/auth_code', methods=['POST'])
 @use_kwargs(
     {
         "phone": fields.Str(
@@ -88,14 +67,10 @@ def accounts_register(phone, app_id):
             validate=[validate.Range(min=10000, max=99999)]
         )
     },
-    location="query",
+    location="json",
 )
 def accounts_auth_code(phone, auth_code):
-    global g_client
-    if g_client is None:
-        return "Auth code is not yet requested", 405
-    result = g_client.loop.run_until_complete(confirm_auth(g_client, phone, auth_code))
-    g_client = None
+    result = loop.run_until_complete(confirm_auth(phone, auth_code))
     return f"Successfully authorised: {result}"
 
 
