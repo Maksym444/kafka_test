@@ -25,6 +25,7 @@ class TgAccount(Document):
     app_id = IntField(required=True)
     app_secret = StringField(required=True)
 
+
 class TgChannel(Document):
     url = StringField(required=True)
     enabled = BooleanField(default=True)

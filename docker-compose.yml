@@ -2,7 +2,6 @@ version: '3'
 
 services:
 
-
   postgres:
     image: postgres:14
     volumes:
@@ -49,6 +48,8 @@ services:
       - ./docker/manager/src:/app/src
 #      - ./docker/consumer/log:/app/log
 #      - ./docker/consumer/entrypoint.sh:/app/entrypoint.sh
+    ports:
+      - 8080:8080
     restart: always
     env_file:
       - .env

@@ -21,12 +21,12 @@ CONSUME_POLL_INTERVAL_SEC = 5
 READ_TIMEOUT_SEC = 1
 PARTITIONS_COUNT = int(os.getenv('KAFKA_PARTITIONS_NUM', 8))
 SIZE_KB = 1024
-# TELETHON_FETCH_MSG_COUNT = None
-TELETHON_FETCH_MSG_COUNT = 256
+# TELETHON_FETCH_MSG_COUNT = int(os.getenv('TELETHON_FETCH_MSG_COUNT', 0)) or None
+TELETHON_FETCH_MSG_COUNT = int(os.getenv('TELETHON_FETCH_MSG_COUNT', 256))
 SIZE_MB = SIZE_KB*SIZE_KB
 KAFKA_HOST = os.getenv('KAFKA_HOST')
 KAFKA_PORT = os.getenv('KAFKA_PORT')
-CONSUMER_SCALE_FACTOR = int(os.getenv('CONSUMER_SCALE_FACTOR'))
+# CONSUMER_SCALE_FACTOR = int(os.getenv('CONSUMER_SCALE_FACTOR'))
 tg_account = None
 TG_CHANNEL_ERRORS = [
     'Nobody is using this username, or the username is unacceptable. If the latter, it must match.*',
@@ -34,18 +34,21 @@ TG_CHANNEL_ERRORS = [
     'No user has ".*" as username',
     'The channel specified is private and you lack permission to access it.*'
 ]
-
+TG_CLIENT_RESTART_MSG_LIMIT = eval(os.getenv('TG_CLIENT_RESTART_MSG_LIMIT', '0')) or float('inf')
+g_msg_count = 0
 
 
 async def producer(partition_id, client):
+    global g_msg_count
     kafka_producer = AIOKafkaProducer(
         bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
         max_request_size=5*SIZE_MB
     )
 
     await kafka_producer.start()
+    msg_limit_exceeded = False
 
-    while True:
+    while not msg_limit_exceeded:
         # atomic read+update (CAS-like operation)
         channel_dict = TgChannel._get_collection().find_one_and_update(
             filter={'locked': False, 'enabled': True, '$or': [{'app_id': client.api_id}, {'app_id': None}]},
@@ -69,7 +72,6 @@ async def producer(partition_id, client):
         try:
             async for msg in parser.get_messages(client, channel.url, channel.channel_id, channel.last_message_id,
                                                  limit=TELETHON_FETCH_MSG_COUNT):
-                # await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
                 date_raw = msg.pop('date_raw')
                 await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
                 logger.info(f'PARTITION_ID {partition_id}: Replied with msg={msg}')
@@ -77,10 +79,14 @@ async def producer(partition_id, client):
                 channel.last_message_ts = date_raw
                 channel.last_parsed = (datetime.datetime.now())
                 channel.save()
+                g_msg_count += 1
+
+            if g_msg_count >= TG_CLIENT_RESTART_MSG_LIMIT:
+                msg_limit_exceeded = True
 
         except FloodWaitError as ex:
             # time.sleep(ex.seconds)
-            logger.error('EXCEPTION (FloodWaitError): %s', ex)
+            logger.error('EXCEPTION (FloodWaitError): %s, %d', ex, ex.seconds)
 
         except Exception as ex:
             if channel:
@@ -110,29 +116,31 @@ def main():
     logger.info(f'CONSUMER: wait until broker is up and running {STARTUP_DELAY}...')
     time.sleep(random.randint(STARTUP_DELAY, STARTUP_DELAY))
 
-    tg_account = TgAccountInfo.objects(db_name='dbradul').order_by('last_access_ts').first()
+    while True:
+        tg_account = TgAccountInfo.objects.order_by('last_access_ts').first()
 
-    if tg_account is None:
-        raise RuntimeError('Coudln\'t find available TG account!')
+        if tg_account is None:
+            raise RuntimeError('Coudn\'t find available TG account!')
 
-    tg_account.last_access_ts = datetime.datetime.now()
-    tg_account.save()
+        tg_account.last_access_ts = datetime.datetime.now()
+        tg_account.save()
 
-    session = MongoSession(
-        database=f'account_{tg_account.app_id}',
-        host=f'{mongo_connection_base_uri}/account_{tg_account.app_id}'
-    )
+        session = MongoSession(
+            database=f'account_{tg_account.app_id}',
+            host=f'{mongo_connection_base_uri}/account_{tg_account.app_id}'
+        )
 
-    client = TelegramClient(
-        session=session,
-        api_id=tg_account.app_id,
-        api_hash=tg_account.app_secret
-    )
+        client = TelegramClient(
+            session=session,
+            api_id=tg_account.app_id,
+            api_hash=tg_account.app_secret
+        )
 
-    with client:
-        logger.info('CONSUMER: start reading messages!')
-        # parser.client.loop.run_until_complete(consumer(0))
-        client.loop.run_until_complete(start_coros(client))
+        with client:
+            logger.info('CONSUMER: start reading messages!')
+            client.loop.run_until_complete(start_coros(client))
+
+        logger.info(f'CONSUMER: Finished session {session}. Starting new one...')
 
 if __name__ == '__main__':
     main()

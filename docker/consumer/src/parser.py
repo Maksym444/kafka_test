@@ -38,17 +38,19 @@ async def get_channel_info(client, channel):
 
 
 async def get_messages(client, channel_url, channel_id, last_message_id, limit):
+    channel = await client.get_input_entity(channel_url)
     async for message in client.iter_messages(
-        entity=channel_url,
+        # entity=channel_url,
+        entity=channel,
         reverse=True,
         offset_id=last_message_id,
-        min_id=last_message_id,
+        # min_id=last_message_id,
         limit=limit
     ):
         try:
             if message.replies and message.replies.replies > 0:
                 replies = []
-                async for reply_message in client.iter_messages(entity=channel_url, reply_to=message.id):
+                async for reply_message in client.iter_messages(entity=channel, reply_to=message.id):
                     d = dict()
                     has_replies = True
                     d['user_id'] = reply_message.sender_id
