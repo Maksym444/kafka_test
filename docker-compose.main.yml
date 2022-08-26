@@ -18,10 +18,7 @@ services:
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_LOG4J_ROOT_LOGLEVEL=WARN
       - KAFKA_TOOLS_LOG4J_LOGLEVEL=ERROR
-#      - KAFKA_LOG4J_LOGGERS="org.apache.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR"
-      # disable kafka logs
-      - KAFKA_LOG4J_LOGGERS="kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR"
-#      - KAFKA_LOG4J_LOGGERS=org.apache.zookeeper=ERROR, org.apache.kafka=ERROR, kafka=ERROR, kafka.cluster=ERROR, kafka.controller=ERROR, kafka.coordinator=ERROR, kafka.log=ERROR, kafka.server=ERROR, kafka.zookeeper=ERROR, state.change.logger=ERROR
+      - KAFKA_LOG4J_LOGGERS="org.apache.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR"
     depends_on:
       - zookeeper
 

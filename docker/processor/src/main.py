@@ -1,9 +1,8 @@
 import asyncio
+import django
 import json
 import os
 import time
-
-import django
 from aiokafka import AIOKafkaConsumer
 from kafka import TopicPartition
 
@@ -12,9 +11,9 @@ from logger import logger
 STARTUP_DELAY = 15
 CONSUME_POLL_INTERVAL_SEC = 5
 READ_TIMEOUT_SEC = 1
-PARTITIONS_COUNT = int(os.getenv('KAFKA_PARTITIONS_NUM', 8))
 SIZE_KB = 1024
 SIZE_MB = SIZE_KB*SIZE_KB
+PARTITIONS_COUNT = int(os.getenv('KAFKA_PARTITIONS_NUM', 8))
 KAFKA_HOST = os.getenv('KAFKA_HOST')
 KAFKA_PORT = os.getenv('KAFKA_PORT')
 PROCESSOR_SCALE_FACTOR = int(os.getenv('PROCESSOR_SCALE_FACTOR'))
@@ -24,7 +23,12 @@ django.setup()
 from producer import models
 
 
-async def consume(partition_id):
+async def process(partition_id):
+    """
+        Processor coroutine
+    :param partition_id: Partition id
+    :return:
+    """
     consumer = AIOKafkaConsumer(
         'topic_result',
         group_id='processors-group',
@@ -33,7 +37,6 @@ async def consume(partition_id):
         fetch_max_bytes=SIZE_MB * 50
     )
     await consumer.start()
-    # consumer.assign([TopicPartition('topic_result', partition_id)])
 
     while True:
         try:
@@ -64,18 +67,21 @@ async def consume(partition_id):
 
 async def start_coros():
     assert PARTITIONS_COUNT >= PROCESSOR_SCALE_FACTOR, "Number of kafka partitions should be >= than number processor instances"
-    consumers = [consume(i) for i in range(PARTITIONS_COUNT//PROCESSOR_SCALE_FACTOR)]
-    # consumers = [consume(i) for i in range(PARTITIONS_COUNT)]
-    # await asyncio.gather(*consumers, producer())
-    await asyncio.gather(*consumers)
+    processors = [process(i) for i in range(PARTITIONS_COUNT // PROCESSOR_SCALE_FACTOR)]
+    await asyncio.gather(*processors)
 
 
 def main():
+    """
+        Main entry point for the processor.
+    :return:
+    """
     logger.info(f'PROCESSOR: wait until broker is up and running {STARTUP_DELAY}...')
     time.sleep(STARTUP_DELAY)
     logger.info('PROCESSOR: start processing messages!')
     asyncio.run(start_coros())
 
 
+# ----------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     main()

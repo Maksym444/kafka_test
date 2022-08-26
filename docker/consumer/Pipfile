@@ -4,13 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-kafka-python = "*"
-kafka-python3 = "*"
 python-dotenv = "*"
 telethon = "*"
 aiokafka = "*"
 mongoengine = "*"
-#motorengine = "*"
 telemongo = "*"
 
 [requires]
@@ -21,4 +18,3 @@ ipython = "*"
 pytest = "*"
 pytest_mongo = "*"
 pytest-mock-resources = "*"
-#pytest-mock-resources = "*"

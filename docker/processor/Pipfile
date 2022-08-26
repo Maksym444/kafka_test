@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-kafka-python = "*"
-kafka-python3 = "*"
 python-dotenv = "*"
 django = "*"
 django-extensions = "*"

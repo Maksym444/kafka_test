@@ -5,7 +5,6 @@ MONGO_HOST = os.getenv('MONGO_HOST')
 MONGO_PORT = os.getenv('MONGO_PORT')
 MONGO_DBNAME = os.getenv('MONGO_DBNAME')
 
-# connect('mongodb')
 mongo_connection_base_uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
 mongo_connection_uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/{MONGO_DBNAME}"
 connect(host=mongo_connection_uri)
@@ -13,10 +12,10 @@ connect(host=mongo_connection_uri)
 
 class TgAccountInfo(Document):
     db_name = StringField(required=True, unique=True)
-    # locked = BooleanField(default=False)
     app_id = IntField(required=True)
     app_secret = StringField(required=True)
     last_access_ts = DateTimeField(null=True)
+
 
 class TgChannel(Document):
     url = StringField(required=True)
