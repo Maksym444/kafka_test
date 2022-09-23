@@ -72,6 +72,7 @@ async def consumer(partition_id, client):
             async for msg in parser.get_messages(client, channel.url, channel.channel_id, channel.last_message_id,
                                                  limit=TELETHON_FETCH_MSG_COUNT):
                 date_raw = msg.pop('date_raw')
+                msg['type'] = 'tg_message'
                 await kafka_producer.send_and_wait("topic_result", json.dumps(msg).encode(), partition=partition_id)
                 logger.info(f'PARTITION_ID {partition_id}: Replied with msg={msg}')
                 channel.last_message_id = msg['id']

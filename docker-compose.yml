@@ -34,10 +34,10 @@ services:
       - mongodb
 
   manager:
-    build: docker/manager
+    build: services/manager
     command: python main.py
     volumes:
-      - ./docker/manager/src:/app/src
+      - ./services/manager/src:/app/src
     ports:
       - ${MANAGER_RESTAPI_PORT}:${MANAGER_RESTAPI_PORT}
     restart: always
@@ -49,15 +49,33 @@ services:
       - kafka
       - mongodb
 
-  consumer:
-    build: docker/consumer
+  telegram_fetcher:
+    build: services/fetchers/telegram
     command: >
       sh -c "/wait-for-it.sh --timeout=10 -s manager:8080 &&
              python main.py"
     volumes:
-      - ./docker/consumer/src:/app/src
-      - ./docker/consumer/log:/app/log
-      - ./docker/wait-for-it.sh:/wait-for-it.sh
+      - ./services/fetchers/telegram/src:/app/src
+      - ./services/fetchers/telegram/log:/app/log
+      - ./services/wait-for-it.sh:/wait-for-it.sh
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=y
+    depends_on:
+      - manager
+
+
+  twitter_fetcher:
+    build: services/fetchers/twitter
+    command: >
+      sh -c "/wait-for-it.sh --timeout=10 -s manager:8080 &&
+             python main.py"
+    volumes:
+      - ./services/fetchers/twitter/src:/app/src
+      - ./services/fetchers/twitter/log:/app/log
+      - ./services/wait-for-it.sh:/wait-for-it.sh
     restart: always
     env_file:
       - .env
@@ -67,11 +85,11 @@ services:
       - manager
 
   processor:
-    build: docker/processor
+    build: services/processor
     command: python main.py
     volumes:
-      - ./docker/processor/src:/app/src
-      - ./docker/processor/log:/app/log
+      - ./services/processor/src:/app/src
+      - ./services/processor/log:/app/log
     restart: always
     env_file:
       - .env

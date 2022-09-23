@@ -20,7 +20,7 @@ PROCESSOR_SCALE_FACTOR = int(os.getenv('PROCESSOR_SCALE_FACTOR'))
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
-from producer import models
+from producer import dumpers
 
 
 async def process(partition_id):
@@ -46,17 +46,13 @@ async def process(partition_id):
                     # logger.info("Received mesasges: %s", tp)
                     for msg in messages:
                         payload = json.loads(msg.value.decode())
-                        channel = await models.Channel.upsert_by_filter(
-                            filters={'url': payload['channel_url']},
-                            data={
-                                'url': payload['channel_url'],
-                                'last_message_id': payload['id'],
-                                'last_message_ts': payload['date'],
-                            }
+                        dumper = dumpers.MsgDumper.get_dumper(payload['type'])
+                        result = await dumper.dump(payload)
+                        logger.info(
+                            "consumed: %s, %s, %s, %s, %s, %s",
+                            msg.topic, msg.partition, msg.offset, msg.key, msg.value, msg.timestamp
                         )
-                        logger.info("consumed: %s, %s, %s, %s, %s, %s", msg.topic, msg.partition, msg.offset,
-                              msg.key, msg.value, msg.timestamp)
-                        logger.info("Updated channel: %s", channel)
+                        logger.info("Dumped message and updated entity: %s", result)
             else:
                 logger.info(f'[CONSUMER] PARTITION_ID {partition_id}: Sleeping till the next attempt...')
                 await asyncio.sleep(CONSUME_POLL_INTERVAL_SEC)

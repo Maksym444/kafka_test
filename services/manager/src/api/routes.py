@@ -1,12 +1,11 @@
-from flask import Flask, jsonify
+from flask import jsonify
 from marshmallow import validate
-
 from webargs import fields
 from webargs.flaskparser import use_kwargs
 
+from validators import phone_validator
 from .accounts import request_auth, confirm_auth
 from .server import app
-from validators import phone_validator
 
 
 @app.errorhandler(422)
