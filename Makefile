@@ -14,12 +14,14 @@ help: ## This help
 
 start: ## Start all containers
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml up \
-		--scale telegram_fetcher=${CONSUMER_SCALE_FACTOR} \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
 		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
 startd: ## Srart all containers (detached)
 	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d \
-		--scale telegram_fetcher=${CONSUMER_SCALE_FACTOR} \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
 		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
 lenses: ## Start with kafka-lenses (diagnosis tool)
@@ -55,18 +57,22 @@ ps: ## Show list of containers
 bash: ## Run bash in c=<name> service container
 	docker compose exec -it $(c) bash
 
+exec: ## Run cmd=<command> in c=<name> service container
+	docker compose exec -it $(c) $(cmd)
 
 # ----------------------------------------------------------------------------------------------------------------------
 tests: ## Run all tests.
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up \
-		--scale telegram_fetcher=${CONSUMER_SCALE_FACTOR} \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
 		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
 testsd: ## Run all tests (detached)
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up -d \
-		--scale telegram_fetcher=${CONSUMER_SCALE_FACTOR} \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
 		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
 

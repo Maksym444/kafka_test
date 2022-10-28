@@ -9,7 +9,7 @@ STARTUP_DELAY = 10
 CONSUME_POLL_INTERVAL_SEC = 5
 READ_TIMEOUT_SEC = 1
 PARTITIONS_COUNT = int(os.getenv('KAFKA_PARTITIONS_NUM', 8))
-CONSUMER_SCALE_FACTOR = int(os.getenv('CONSUMER_SCALE_FACTOR', 1))
+FETCHER_SCALE_FACTOR = int(os.getenv('TELEGRAM_FETCHER_SCALE_FACTOR', 1))
 SIZE_KB = 1024
 SIZE_MB = SIZE_KB*SIZE_KB
 KAFKA_HOST = os.getenv('KAFKA_HOST')
@@ -67,7 +67,7 @@ async def consumer(partition_id):
         )
 
 async def start_coros():
-    consumers = [consumer(i) for i in range(PARTITIONS_COUNT//CONSUMER_SCALE_FACTOR)]
+    consumers = [consumer(i) for i in range(PARTITIONS_COUNT//FETCHER_SCALE_FACTOR)]
     await asyncio.gather(*consumers)
 
 

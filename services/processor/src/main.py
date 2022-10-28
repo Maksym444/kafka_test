@@ -8,6 +8,7 @@ from kafka import TopicPartition
 
 from logger import logger
 
+
 STARTUP_DELAY = 15
 CONSUME_POLL_INTERVAL_SEC = 5
 READ_TIMEOUT_SEC = 1
@@ -38,6 +39,9 @@ async def process(partition_id):
     )
     await consumer.start()
 
+    from producer.dumpers import EsDumper
+    es_dumper = EsDumper()
+
     while True:
         try:
             data = await consumer.getmany(timeout_ms=READ_TIMEOUT_SEC*1000)
@@ -46,6 +50,9 @@ async def process(partition_id):
                     # logger.info("Received mesasges: %s", tp)
                     for msg in messages:
                         payload = json.loads(msg.value.decode())
+                        logger.info(
+                            "--- PAYLOAD ---: %s",payload
+                        )
                         dumper = dumpers.MsgDumper.get_dumper(payload['type'])
                         result = await dumper.dump(payload)
                         logger.info(
@@ -53,6 +60,9 @@ async def process(partition_id):
                             msg.topic, msg.partition, msg.offset, msg.key, msg.value, msg.timestamp
                         )
                         logger.info("Dumped message and updated entity: %s", result)
+
+                        await es_dumper.dump(payload)
+                        logger.info("Dumped message into ES")
             else:
                 logger.info(f'[CONSUMER] PARTITION_ID {partition_id}: Sleeping till the next attempt...')
                 await asyncio.sleep(CONSUME_POLL_INTERVAL_SEC)

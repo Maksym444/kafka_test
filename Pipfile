@@ -4,16 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-python-dotenv = "*"
-django = "*"
-django-extensions = "*"
-aiokafka = "*"
-psycopg2 = "*"
 elasticsearch = "==7.17.7"
-elastic-transport = "==7.16.0"
+
+[dev-packages]
 
 [requires]
 python_version = "3.9"
-
-[dev-packages]
-ipython = "*"
