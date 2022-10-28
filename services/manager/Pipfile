@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+python-dotenv = "*"
+mongoengine = "*"
+telemongo = "*"
+flask = "*"
+webargs = "*"
+
+[requires]
+python_version = "3.9"
+
+[dev-packages]
+ipython = "*"
+pytest = "*"
+requests = "*"

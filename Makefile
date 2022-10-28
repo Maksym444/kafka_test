@@ -9,47 +9,73 @@ endif
 
 default: rebootd logs
 
-start:
-	docker compose  -f docker-compose.yml -f docker-compose.main.yml up
+help: ## This help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-lenses:
+start: ## Start all containers
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml up \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
+		--scale processor=${PROCESSOR_SCALE_FACTOR}
+
+startd: ## Srart all containers (detached)
+	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
+		--scale processor=${PROCESSOR_SCALE_FACTOR}
+
+lenses: ## Start with kafka-lenses (diagnosis tool)
 	docker compose -f docker-compose.yml -f docker-compose.lenses.yml down -t 1
 	docker compose -f docker-compose.yml -f docker-compose.lenses.yml up -d
-	docker compose -f docker-compose.yml -f docker-compose.lenses.yml logs -f -t
-#	docker-compose -f docker-compose.lenses.yml up -d
-#	docker-compose logs -f --tail=100
+	docker compose -f docker-compose.yml -f docker-compose.lenses.yml logs -f -t --tail=100
 
-stop:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml down -t 4
+stop: ## Stop all containers
+	docker compose -f docker-compose.yml -f docker-compose.main.yml down
 
-restart:
+restart: ## Restart all containers
 	docker compose -f docker-compose.yml -f docker-compose.main.yml restart
 
-rebuild:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml build
+build: ## Build all or c=name container images
+	docker compose -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml build ${c}
 
-rebuildf:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml build --no-cache
+buildf: ## Build all or c=name container images (force)
+	docker compose -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml build --no-cache ${c}
 
-reboot: stop start
+reboot: stop start ## Reboot all containers
 
-startd:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml up -d
+rebootd: stop startd ## Reboot all containers (detached)
 
-rebootd: stop startd
+logs: ## Show all or c=name container logs.
+	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t --tail=100 ${c}
 
-logs:
-	docker compose -f docker-compose.yml -f docker-compose.main.yml logs -f -t
-
-top:
+top: ## Show list of containers (extended)
 	docker compose top
 
+ps: ## Show list of containers
+	docker compose ps
 
-# --------------------------------
-test:
+bash: ## Run bash in c=<name> service container
+	docker compose exec -it $(c) bash
+
+exec: ## Run cmd=<command> in c=<name> service container
+	docker compose exec -it $(c) $(cmd)
+
+# ----------------------------------------------------------------------------------------------------------------------
+tests: ## Run all tests.
 	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
-	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up #--scale consumer=2
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
+		--scale processor=${PROCESSOR_SCALE_FACTOR}
+
+testsd: ## Run all tests (detached)
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml down -t 1
+	docker compose  -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up -d \
+		--scale telegram_fetcher=${TELEGRAM_FETCHER_SCALE_FACTOR} \
+		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
+		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
 
-export:
+# ----------------------------------------------------------------------------------------------------------------------
+export: ## Export env vars
 	export $(cat .env | sed 's/#.*//g' | xargs)
