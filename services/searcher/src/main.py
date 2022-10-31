@@ -1,7 +1,8 @@
 import os
 import logging
 
-from api import app
+from server import app
+import endpoints
 
 SEARCHER_RESTAPI_DEBUG = bool(os.getenv('SEARCHER_RESTAPI_DEBUG')) or False
 SEARCHER_RESTAPI_PORT = int(os.getenv('SEARCHER_RESTAPI_PORT', 8080))

@@ -3,7 +3,7 @@ FROM python:3.9
 RUN apt update
 
 RUN mkdir /app
-RUN mkdir -p /app/src/api/static/media
+RUN mkdir -p /app/src/static/media
 WORKDIR /app
 
 

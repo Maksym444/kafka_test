@@ -22,13 +22,14 @@
     }
 
     .search {
-      margin: 0px 10px 20px 10px;
-      padding: 20px;
+      margin: 10px 10px 10px 10px;
+      padding: 10px;
       background: #fafaff;
     }
 
     .search-header {
-      height: 40px;
+      height: 10px;
+      font: italic 14px/12px sans-serif;
     }
 
     .search-term {
@@ -39,16 +40,16 @@
 
     .search-results {
       display: grid;
-      grid-template-columns: repeat(3, 100px);
+      grid-template-columns: repeat(1, 1000px);
       grid-auto-rows: 150px;
-      grid-gap: 20px;
+      grid-gap: 30px;
     }
 
-    .message {
-      display: block;
-      color: #333;
-      text-decoration: none;
-    }
+    /*.message {*/
+    /*  display: block;*/
+    /*  color: #333;*/
+    /*  text-decoration: none;*/
+    /*}*/
 
     .message-image {
       max-width: 100px;
@@ -57,7 +58,7 @@
     }
 
     .message-info {
-      height: 54px;
+      height: 254px;
       overflow: hidden;
     }
 
@@ -69,33 +70,48 @@
 
 
   <form id="search-bar" action="/search">
-    <input type="text" placeholder="Search.." name="search" value="{{ search_term }}">
-    <button type="submit"><i class="fa fa-search">Search</i></button>
+        <input type="text" placeholder="Search..." name="q" value="{{ query }}">
+        <button type="submit"><i class="fa fa-search">Search</i></button>
+<!--    <input class="form-check" type="checkbox" placeholder="Search for exact term" name="term" value="{{ exact_term }}">-->
+
+      <div class="col-auto">
+            <div class="form-check">
+              <input class="form-check" type="checkbox" id="autoSizingCheck"  name="exact_term" {% if exact_term %}checked{% else %}{% endif %}>
+              <label class="form-check-label" for="autoSizingCheck">Search for exact term</label>
+            </div>
+      </div>
   </form>
 
   <div class="bulk-results">
-<!--    {% for category, products in products_by_category %}-->
+
       <div class="search">
         <div class="search-header">
-          <a href="search?search={{category}}" class="search-term">"{{ category }}"</a>
+          <span>Found messages: {{ hits_total }}</span>
         </div>
         <div class="search-results">
-          {% for message in messages %}
-              <script
-                    async src="https://telegram.org/js/telegram-widget.js?21"
-                    data-telegram-post="{{message.channel}}/{{message.id}}"
-                    data-width="100%">
-              </script>
+              {% for message in messages %}
+                <div class="message-info mt-5 mb-5">
+                    <div class="row">
+                        <div class="col-md-1">
+                            {% if message.image %}
+                                <img width="42" height="42" class="message-image" src="{{url_for('static', filename=message.image)}}" alt="message image">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{message.channel}}" class="message">
+                                <div class="message-name">{{message.channel}}</div>
+                            </a>
+                            <div class="message-name">{{message.date}}</div>
+                            <div class="message-name">{{message.score}}</div>
+                        </div>
+                    </div>
+                    <a href="/messages/{{message.channel_name}}/{{message.id}}" class="message">
+                        <div class="message-info">{{message.message}}</div>
+                    </a>
+                </div>
 
-<!--            <a href="/product/{{ product.id }}" class="product">-->
-<!--              <img class="product-image" src="{{ product.image }}"/>-->
-<!--              <div class="product-info">-->
-<!--                <span>{{ product.name }}</span>-->
-<!--              </div>-->
-<!--            </a>-->
-          {% endfor %}
+              {% endfor %}
         </div>
       </div>
-<!--    {% endfor %}-->
   </div>
 {% endblock %}

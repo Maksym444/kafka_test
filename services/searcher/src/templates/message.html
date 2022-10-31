@@ -5,6 +5,10 @@
   </style>
 
   <div class="message">
-    <pre class="json">{{message_json}}</pre>
+        <script
+              async src="https://telegram.org/js/telegram-widget.js?21"
+              data-telegram-post="{{message.channel_name}}/{{message.id}}"
+              data-width="100%">
+        </script>
   </div>
 {% endblock %}

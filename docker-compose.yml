@@ -137,7 +137,7 @@ services:
     command: python main.py
     volumes:
       - ./services/searcher/src:/app/src
-      - $PWD/services/fetchers/telegram/src/media:/app/src/api/static/media
+      - $PWD/services/fetchers/telegram/src/media:/app/src/static/media
     ports:
       - ${SEARCHER_RESTAPI_PORT}:${SEARCHER_RESTAPI_PORT}
     restart: always
