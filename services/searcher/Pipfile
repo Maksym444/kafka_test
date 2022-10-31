@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+python-dotenv = "*"
+flask = "*"
+elasticsearch = "==7.17.7"
+elastic-transport = "==7.16.0"
+elasticsearch-dsl = "==7.4.0"
+
+[requires]
+python_version = "3.9"
+
+[dev-packages]
+ipython = "*"

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    #search-bar {
+      display: flex;
+      margin: 20px 10px;
+    }
+
+    #search-bar input {
+      width: 100%;
+      padding: 10px;
+    }
+
+    #search-bar button {
+      margin-left: 15px;
+    }
+
+    .bulk-results {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .search {
+      margin: 0px 10px 20px 10px;
+      padding: 20px;
+      background: #fafaff;
+    }
+
+    .search-header {
+      height: 40px;
+    }
+
+    .search-term {
+      font-weight: bold;
+      color: #000;
+      text-decoration: none;
+    }
+
+    .search-results {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-auto-rows: 150px;
+      grid-gap: 20px;
+    }
+
+    .message {
+      display: block;
+      color: #333;
+      text-decoration: none;
+    }
+
+    .message-image {
+      max-width: 100px;
+      max-height: 100px;
+      margin-bottom: 10px;
+    }
+
+    .message-info {
+      height: 54px;
+      overflow: hidden;
+    }
+
+    .message-name {
+      font-size: 10px;
+      margin-right: 10px;
+    }
+  </style>
+
+
+  <form id="search-bar" action="/search">
+    <input type="text" placeholder="Search.." name="search" value="{{ search_term }}">
+    <button type="submit"><i class="fa fa-search">Search</i></button>
+  </form>
+
+  <div class="bulk-results">
+<!--    {% for category, products in products_by_category %}-->
+      <div class="search">
+        <div class="search-header">
+          <a href="search?search={{category}}" class="search-term">"{{ category }}"</a>
+        </div>
+        <div class="search-results">
+          {% for message in messages %}
+              <script
+                    async src="https://telegram.org/js/telegram-widget.js?21"
+                    data-telegram-post="{{message.channel}}/{{message.id}}"
+                    data-width="100%">
+              </script>
+
+<!--            <a href="/product/{{ product.id }}" class="product">-->
+<!--              <img class="product-image" src="{{ product.image }}"/>-->
+<!--              <div class="product-info">-->
+<!--                <span>{{ product.name }}</span>-->
+<!--              </div>-->
+<!--            </a>-->
+          {% endfor %}
+        </div>
+      </div>
+<!--    {% endfor %}-->
+  </div>
+{% endblock %}

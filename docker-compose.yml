@@ -56,6 +56,7 @@ services:
              python main.py"
     volumes:
       - ./services/fetchers/telegram/src:/app/src
+      - $PWD/services/fetchers/telegram/src/media:/app/src/media
       - ./services/fetchers/telegram/log:/app/log
       - ./services/wait-for-it.sh:/wait-for-it.sh
     restart: always
@@ -131,10 +132,27 @@ services:
     depends_on:
       - elasticsearch
 
+  searcher:
+    build: services/searcher
+    command: python main.py
+    volumes:
+      - ./services/searcher/src:/app/src
+      - $PWD/services/fetchers/telegram/src/media:/app/src/api/static/media
+    ports:
+      - ${SEARCHER_RESTAPI_PORT}:${SEARCHER_RESTAPI_PORT}
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=y
+    depends_on:
+      - elasticsearch
+
 
 volumes:
 #  kafka_data: {}
   pg_data: {}
   mongo_data: {}
   elasticsearch_data: {}
+#  fetcher_media: {}
 

@@ -75,6 +75,12 @@ testsd: ## Run all tests (detached)
 		--scale twitter_fetcher=${TWITTER_FETCHER_SCALE_FACTOR} \
 		--scale processor=${PROCESSOR_SCALE_FACTOR}
 
+restart-svc: ## Restart c=<name> service container
+	#docker compose build ${c}
+	docker compose stop ${c}
+	docker compose rm -f ${c}
+	docker compose -f docker-compose.yml -f docker-compose.main.yml -f docker-compose.test.yml up -d --no-recreate
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 export: ## Export env vars
